@@ -1,0 +1,6 @@
+{
+  "max_len": 50,
+  "embed_dim": 200,
+  "fused_dim": 600,
+  "version": "1.0.0"
+}

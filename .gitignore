@@ -1,0 +1,39 @@
+# ── Python ───────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ── Virtual Environments ─────────────────
+.venv/
+venv/
+venv311/
+backend/venv311/
+
+# ── IDE / Editor ─────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS Files ─────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Model artifacts (too large for Git) ──
+backend/artifacts/*.h5
+backend/artifacts/*.pkl
+
+# ── Environment / Secrets ────────────────
+.env
+.env.local
+
+# ── Logs ─────────────────────────────────
+*.log
+
+# ── Distribution / Build ────────────────
+dist/
+build/
+*.egg-info/
