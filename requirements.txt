@@ -1,0 +1,8 @@
+streamlit==1.32.0
+requests==2.31.0
+pandas==2.1.4
+plotly==5.19.0
+tensorflow==2.15.0
+numpy==1.24.4
+emoji==2.10.0
+vaderSentiment==3.3.2
