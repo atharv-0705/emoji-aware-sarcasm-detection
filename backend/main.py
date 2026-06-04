@@ -10,7 +10,7 @@ from model_loader import load_all_artifacts, get_registry
 from predict import predict as run_predict
  
 # ── Paths ──────────────────────────────────────────────────────
-BASE_DIR = Path.cwd()   # current working directory
+BASE_DIR = Path(__file__).resolve().parent
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 DATA_DIR      = BASE_DIR / "data"
  
