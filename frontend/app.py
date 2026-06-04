@@ -667,7 +667,8 @@ with tab_about:
         
  
         [GitHub](https://github.com/atharv-0705)
- 
+        [LinkeDin](https://www.linkedin.com/in/atharv-gupta-45a37b36a/)
+         
         #### 📄 Paper Status
         *Research paper in preparation*
         """)
