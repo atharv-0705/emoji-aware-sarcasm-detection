@@ -1,4 +1,15 @@
-import os, json, pickle
+import os, json, pickle, gc
+
+# ══════════════════════════════════════════════════════════════
+# CRITICAL: These MUST be set BEFORE importing TensorFlow.
+# They prevent memory allocation failures on machines with
+# limited available RAM (< 8GB free). Uses direct assignment
+# (not setdefault) to guarantee they always take effect.
+# ══════════════════════════════════════════════════════════════
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"            # Disable MKL/oneDNN allocator
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"              # Suppress TF info/warnings
+os.environ["PYTHONIOENCODING"] = "utf-8"               # Prevent emoji print crashes
+
 import numpy as np
 import tensorflow as tf
 import h5py
@@ -6,6 +17,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from tensorflow.keras.layers import InputLayer, MultiHeadAttention
 from tensorflow.keras.mixed_precision import Policy
+
+# Limit TF threads to reduce memory footprint (~30-40% savings)
+tf.config.threading.set_inter_op_parallelism_threads(2)
+tf.config.threading.set_intra_op_parallelism_threads(4)
 
 # ── Paths (relative to this file) ─────────────────────────────
 BASE_DIR = Path.cwd()
@@ -352,16 +367,35 @@ def load_all_artifacts() -> None:
                 "  → Copy your trained model.h5 to backend/artifacts/"
             )
 
-        # Suppress TF verbosity and disable oneDNN to avoid
-        # MKL BFC allocator OOM on memory-constrained machines
-        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-        os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+        # Free as much memory as possible before loading the model
+        gc.collect()
 
-        registry.model = tf.keras.models.load_model(
-            str(MODEL_PATH),
-            compile=False,       # Don't need optimizer for inference
-            custom_objects={"DTypePolicy": DTypePolicy}
-        )
+        # Attempt to load with retry on transient memory errors
+        model_loaded = False
+        for attempt in range(3):
+            try:
+                registry.model = tf.keras.models.load_model(
+                    str(MODEL_PATH),
+                    compile=False,       # Don't need optimizer for inference
+                    custom_objects={"DTypePolicy": DTypePolicy}
+                )
+                model_loaded = True
+                break
+            except Exception as load_err:
+                err_str = str(load_err).lower()
+                if "bad allocation" in err_str or "oom" in err_str or "memory" in err_str:
+                    print(f"  [WARN] Model load attempt {attempt+1}/3 failed (memory): {load_err}")
+                    gc.collect()
+                    import time; time.sleep(2)
+                    continue
+                else:
+                    raise  # Non-memory errors should propagate immediately
+
+        if not model_loaded:
+            raise MemoryError(
+                "Failed to load model after 3 attempts due to insufficient memory. "
+                "Close other applications to free RAM and restart the server."
+            )
 
         params = registry.model.count_params()
         print(f"  [OK] model.h5 loaded  ({params:,} parameters)")

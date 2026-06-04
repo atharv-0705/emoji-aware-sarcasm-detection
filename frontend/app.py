@@ -664,7 +664,7 @@ with tab_about:
  
         #### 👤 Author
         **Atharv Gupta**
-        AI & Robotics, 2nd Year
+        
  
         [GitHub](https://github.com/atharv-0705)
  

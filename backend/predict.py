@@ -41,6 +41,8 @@ _BULLY_KEYWORDS = {
     "ugly", "fat", "pathetic", "worthless", "disgusting",
     "shut up", "die", "failure", "trash", "garbage", "moron",
     "imbecile", "retard", "freak", "creep", "scum",
+    "fuck", "motherfucker", "bitch", "asshole", "bastard", "cunt",
+    "dick", "nobody wants you", "go away", "you are nothing", "you're nothing"
 }
 
 

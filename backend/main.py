@@ -113,7 +113,25 @@ def health_check(reg = Depends(get_registry)):
         "error"         : reg.load_error,
         "config"        : reg.config,
     }
- 
+
+
+@app.post("/reload", tags=["General"])
+def reload_model():
+    """
+    Retry loading model artifacts without restarting the server.
+    Use when model failed to load at startup due to low memory.
+    
+    Steps: Close other apps to free RAM → call POST /reload → check /health
+    """
+    load_all_artifacts()
+    reg = get_registry()
+    return {
+        "status"       : "ready" if reg.is_ready else "not_ready",
+        "model_loaded" : reg.is_ready,
+        "error"        : reg.load_error,
+        "message"      : "Model loaded successfully!" if reg.is_ready 
+                         else "Model still failed to load. Free more RAM and try again.",
+    }
  
 @app.post("/predict", response_model=PredictResponse, tags=["Prediction"])
 def predict_endpoint(request: PredictRequest, reg = Depends(get_registry)):
