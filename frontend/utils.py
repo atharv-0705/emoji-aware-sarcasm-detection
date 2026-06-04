@@ -61,38 +61,58 @@ def call_predict(text: str) -> Optional[Dict[str, Any]]:
     return None
  
  
+# ── Cached Fetch Helpers (only cache successful non-empty requests) ──
+ 
 @st.cache_data(ttl=300)
+def _fetch_metrics() -> List[Dict[str, Any]]:
+    r = requests.get(f"{BACKEND_URL}/metrics", timeout=10)
+    r.raise_for_status()
+    data = r.json().get("data", [])
+    if not data:
+        raise ValueError("No metrics data returned")
+    return data
+ 
+@st.cache_data(ttl=300)
+def _fetch_correlation_stats() -> List[Dict[str, Any]]:
+    r = requests.get(f"{BACKEND_URL}/stats", timeout=10)
+    r.raise_for_status()
+    data = r.json().get("data", [])
+    if not data:
+        raise ValueError("No correlation stats data returned")
+    return data
+ 
+@st.cache_data(ttl=300)
+def _fetch_emoji_data(top_n: int) -> List[Dict[str, Any]]:
+    r = requests.get(f"{BACKEND_URL}/emojis?top_n={top_n}", timeout=10)
+    r.raise_for_status()
+    data = r.json().get("data", [])
+    if not data:
+        raise ValueError("No emoji data returned")
+    return data
+ 
+# ── Public APIs ──
+ 
 def get_metrics() -> pd.DataFrame:
     """Fetch model metrics (cached 5 min)."""
     try:
-        r = requests.get(f"{BACKEND_URL}/metrics", timeout=10)
-        r.raise_for_status()
-        data = r.json().get("data", [])
-        return pd.DataFrame(data) if data else pd.DataFrame()
+        data = _fetch_metrics()
+        return pd.DataFrame(data)
     except Exception:
         return pd.DataFrame()
  
- 
-@st.cache_data(ttl=300)
 def get_correlation_stats() -> pd.DataFrame:
     """Fetch correlation stats (cached 5 min)."""
     try:
-        r = requests.get(f"{BACKEND_URL}/stats", timeout=10)
-        r.raise_for_status()
-        data = r.json().get("data", [])
-        return pd.DataFrame(data) if data else pd.DataFrame()
+        data = _fetch_correlation_stats()
+        return pd.DataFrame(data)
     except Exception:
         return pd.DataFrame()
  
- 
-@st.cache_data(ttl=300)
 def get_emoji_data(top_n: int = 20) -> pd.DataFrame:
     """Fetch top emoji analysis (cached 5 min)."""
     try:
-        r = requests.get(f"{BACKEND_URL}/emojis?top_n={top_n}", timeout=10)
-        r.raise_for_status()
-        data = r.json().get("data", [])
-        return pd.DataFrame(data) if data else pd.DataFrame()
+        data = _fetch_emoji_data(top_n)
+        return pd.DataFrame(data)
     except Exception:
         return pd.DataFrame()
  
