@@ -1,7 +1,7 @@
 # Sarcoji — Sarcasm Detection
 
 Detect sarcasm, sentiment, emotion, and bullying in social media text
-using Hybrid Deep Learning (CNN-BiLSTM-Attention).
+using Hybrid Deep Learning (CNN-BiLSTM-Attention).A deep learning-based NLP application for sentiment analysis, sarcasm detection, emoji interpretation, emotion classification, and cyberbullying identification from real-world user-generated content.
 
 ## Model Architecture
 - **Embeddings**: GloVe-Twitter + Word2Vec + Emoji2Vec (600-dim fusion)
