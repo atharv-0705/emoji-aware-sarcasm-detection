@@ -1,3 +1,14 @@
+---
+title: Sarcoji — Sarcasm Detection
+emoji: 😏
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: "1.32.0"
+app_file: app.py
+pinned: false
+---
+
 # Sarcoji — Sarcasm Detection
 
 Detect sarcasm, sentiment, emotion, and bullying in social media text

@@ -24,7 +24,7 @@ tf.config.threading.set_intra_op_parallelism_threads(4)
 
 # ── Paths (relative to this file) ─────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
-ARTIFACTS_DIR = BASE_DIR / "artifacts"
+ARTIFACTS_DIR = BASE_DIR.parent / "artifacts"
 
 MODEL_PATH     = ARTIFACTS_DIR / "model.h5"
 WORD2IDX_PATH  = ARTIFACTS_DIR / "word2idx.pkl"

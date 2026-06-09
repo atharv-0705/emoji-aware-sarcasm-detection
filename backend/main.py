@@ -11,8 +11,8 @@ from predict import predict as run_predict
  
 # ── Paths ──────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
-ARTIFACTS_DIR = BASE_DIR / "artifacts"
-DATA_DIR      = BASE_DIR / "data"
+ARTIFACTS_DIR = BASE_DIR.parent / "artifacts"
+DATA_DIR      = BASE_DIR.parent / "data"
  
 # ── FastAPI app ───────────────────────────────────────────────
 app = FastAPI(
