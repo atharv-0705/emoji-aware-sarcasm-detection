@@ -725,71 +725,47 @@ with tab_analytics:
 with tab_model:
     st.markdown("### 🧠 Model Architecture & Performance")
 
-    col_arch, col_perf = st.columns([1.3, 0.7])
+    col_arch, col_perf = st.columns([1, 1])
 
     with col_arch:
         st.markdown("#### Architecture: CNN-BiLSTM-Attention")
-        import streamlit.components.v1 as components
-        
-        mermaid_code = """
-        graph TD
-            A["Input Text + Emojis"] --> B["Text Preprocessing & Emoji Demojization"]
-            B --> C["Triple Embedding Fusion Layer"]
-            
-            subgraph triple_fusion ["600-Dimensional Dense Representation"]
-                C1["GloVe-Twitter 200d"]
-                C2["Word2Vec 200d"]
-                C3["Emoji2Vec 200d"]
-                C1 --> C4["Concatenation: F = W ⊕ G ⊕ E"]
-                C2 --> C4
-                C3 --> C4
-            end
-            
-            C4 --> D["Spatial Dropout 1D 0.40"]
-            D --> E["Multi-Scale 1D CNN Kernels: 2, 3, 4"]
-            E --> F["1D Max Pooling"]
-            F --> G["Bidirectional LSTM 64 + 64 units"]
-            G --> H["Multi-Head Self-Attention 4 Heads"]
-            H --> I["Fully Connected Classifier Dense 128 -> BN -> Dense 64"]
-            I --> J["Sigmoid Output Layer"]
-            J --> K{"Youden's J Thresholding"}
-            K -->|"p >= 0.449"| L["Sarcastic"]
-            K -->|"p < 0.449"| M["Non-Sarcastic"]
-        """
-        
-        html_code = f"""
-        <div class="mermaid" style="background-color: transparent;">
-        {mermaid_code}
-        </div>
-        <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-        <script>
-            mermaid.initialize({{
-                startOnLoad: true,
-                theme: 'dark',
-                themeVariables: {{
-                    background: 'transparent',
-                    primaryColor: '#1e293b',
-                    primaryTextColor: '#f8fafc',
-                    primaryBorderColor: '#475569',
-                    lineColor: '#94a3b8',
-                    secondaryColor: '#334155',
-                    tertiaryColor: '#0f172a'
-                }}
-            }});
-        </script>
-        <style>
-            body {{
-                background-color: #0e1117 !important;
-                margin: 0;
-                padding: 10px;
-            }}
-            /* Hide scrollbar */
-            ::-webkit-scrollbar {{
-                display: none;
-            }}
-        </style>
-        """
-        components.html(html_code, height=950, scrolling=False)
+        st.markdown("""
+        ```
+        Input Text + Emojis
+               ↓
+        ┌─────────────────────────────────┐
+        │  Triple Embedding Fusion        │
+        │  GloVe-Twitter (200-dim)        │
+        │  Word2Vec (200-dim)             │
+        │  Emoji2Vec (200-dim)            │
+        │  → Concat: F = W⊕G⊕E (600-dim) │
+        └─────────────────────────────────┘
+               ↓ SpatialDropout(0.40)
+        ┌─────────────────────────────────┐
+        │  Multi-Scale CNN                │
+        │  k=2,3,4 | 64 filters each     │
+        │  → 192-dim | MaxPool(2)         │
+        └─────────────────────────────────┘
+               ↓
+        ┌─────────────────────────────────┐
+        │  BiLSTM (64+64 units)           │
+        │  return_sequences=True          │
+        └─────────────────────────────────┘
+               ↓
+        ┌─────────────────────────────────┐
+        │  Multi-Head Self-Attention      │
+        │  4 heads | key_dim=32           │
+        │  + Residual + LayerNorm         │
+        └─────────────────────────────────┘
+               ↓
+        Dense(128)→BN→Drop(0.5)
+        Dense(64)→BN→Drop(0.4)
+        Dense(1) → Sigmoid
+               ↓
+        Sarcasm Probability y ∈ (0,1)
+        Threshold: Youden's J (~0.449)
+        ```
+        """)
 
     with col_perf:
         st.markdown("#### Training: Stepwise Transfer Learning")
