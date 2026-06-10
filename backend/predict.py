@@ -46,7 +46,7 @@ _BULLY_KEYWORDS = {
 }
 
 
-def _detect_bully(text: str) -> Tuple[str, float]:
+def _detect_bully(text: str, is_sarcastic: bool = False, sentiment: str = "Neutral") -> Tuple[str, float]:
     """
     Approximation: keyword-based bully detection.
     Returns (label, confidence).
@@ -55,9 +55,22 @@ def _detect_bully(text: str) -> Tuple[str, float]:
     """
     t_lower = text.lower()
     hits = [kw for kw in _BULLY_KEYWORDS if kw in t_lower]
-    if hits:
-        conf = min(0.60 + 0.08 * len(hits), 0.95)
+    
+    # Workplace/colleague passive-aggressive targeting (sarcastic/negative context)
+    workplace_insult = ("coworker" in t_lower or "colleague" in t_lower or "boss" in t_lower) and \
+                       ("avoid" in t_lower or "lazy" in t_lower or "slack" in t_lower or "hard at" in t_lower) and \
+                       (is_sarcastic or sentiment == "Negative")
+                       
+    # Online social network mockery / targeting (sarcastic/negative context)
+    online_mockery = ("linkedin" in t_lower or "linked" in t_lower or "twitter" in t_lower or "people explain" in t_lower) and \
+                     ("explain" in t_lower or "guru" in t_lower or "expert" in t_lower or "watching" in t_lower) and \
+                     (is_sarcastic or sentiment == "Negative")
+                     
+    if hits or workplace_insult or online_mockery:
+        base_conf = 0.60 + 0.08 * len(hits) if hits else 0.82
+        conf = min(base_conf, 0.95)
         return "Bully", round(conf, 3)
+        
     return "Not-Bully", 0.92
 
 
@@ -231,7 +244,7 @@ def predict(text: str) -> Dict[str, Any]:
     emotion = _get_emotion(emoji_chars, text, raw_prob)
 
     # ── Step 5: Bully detection ───────────────────────────────
-    bully_label, bully_conf = _detect_bully(text)
+    bully_label, bully_conf = _detect_bully(text, is_sarcastic, sentiment)
 
     # ── Step 6: Attention highlights ──────────────────────────
     highlights = _compute_attention_weights(tokens, sequence, raw_prob)
