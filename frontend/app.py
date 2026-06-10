@@ -552,7 +552,7 @@ with tab_model:
             A["Input Text + Emojis"] --> B["Text Preprocessing & Emoji Demojization"]
             B --> C["Triple Embedding Fusion Layer"]
             
-            subgraph Triple Embedding Fusion ["600-Dimensional Dense Representation"]
+            subgraph triple_fusion ["600-Dimensional Dense Representation"]
                 C1["GloVe-Twitter 200d"]
                 C2["Word2Vec 200d"]
                 C3["Emoji2Vec 200d"]
@@ -569,8 +569,8 @@ with tab_model:
             H --> I["Fully Connected Classifier Dense 128 -> BN -> Dense 64"]
             I --> J["Sigmoid Output Layer"]
             J --> K{"Youden's J Thresholding"}
-            K -->|p &ge; 0.449| L["Sarcastic"]
-            K -->|p &lt; 0.449| M["Non-Sarcastic"]
+            K -->|"p >= 0.449"| L["Sarcastic"]
+            K -->|"p < 0.449"| M["Non-Sarcastic"]
         """
         
         html_code = f"""
