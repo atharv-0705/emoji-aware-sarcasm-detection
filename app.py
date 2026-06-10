@@ -405,10 +405,11 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════
 # TABS
 # ══════════════════════════════════════════════════════════════
-tab_predict, tab_analytics, tab_model, tab_history, tab_about = st.tabs([
+tab_predict, tab_analytics, tab_model, tab_comparison, tab_history, tab_about = st.tabs([
     "🎯  Predict",
     "📊  Analytics",
     "🧠  Model Info",
+    "📈  Model Comparison",
     "📋  History",
     "ℹ️   About"
 ])
@@ -789,309 +790,327 @@ with tab_model:
         - Vocab size: 27,677 tokens
         """)
 
-    # ── Performance metrics table ─────────────────────────────
-        st.markdown("#### 📈 Model Comparison (Ablation Study)")
-        
-        # ── Ablation Study Dataset ──
-        models_data = [
-            {
-                "ID": "Model A",
-                "Name": "Word2Vec + CNN + MaxPool + BiLSTM + Attention",
-                "Accuracy": 0.7729,
-                "Precision": 0.7100,
-                "Recall": 0.7200,
-                "Specificity": 0.8000,
-                "F1": 0.7150,
-                "ROC-AUC": 0.8748,
-                "MCC": 0.5383,
-                "Overfit": 0.1600,
-                "Description": "Weak baseline. Shows severe overfitting. Used only as research baseline.",
-                "Details": "Word2Vec (200d) embedding, 1D CNN feature extractors, 1D Max Pooling, BiLSTM temporal modeling, Multi-Head Attention layer. Trained from scratch without transfer learning."
-            },
-            {
-                "ID": "Model B",
-                "Name": "GloVe-Twitter + CNN + MaxPool + BiLSTM + Attention + Stepwise TL",
-                "Accuracy": 0.8275,
-                "Precision": 0.7600,
-                "Recall": 0.8100,
-                "Specificity": 0.8400,
-                "F1": 0.7840,
-                "ROC-AUC": 0.9159,
-                "MCC": 0.6476,
-                "Overfit": 0.0500,
-                "Description": "Current best model. Strong generalization. Publishable architecture.",
-                "Details": "GloVe Twitter (200d) embedding, 1D CNN, Max Pooling, BiLSTM, Self-Attention, trained using a 3-phase stepwise transfer learning approach."
-            },
-            {
-                "ID": "Model C",
-                "Name": "Word2Vec + CNN + MaxPool + BiLSTM + Attention + Stepwise TL",
-                "Accuracy": 0.8100,
-                "Precision": 0.7500,
-                "Recall": 0.7900,
-                "Specificity": 0.8200,
-                "F1": 0.7690,
-                "ROC-AUC": 0.9050,
-                "MCC": 0.6100,
-                "Overfit": 0.0800,
-                "Description": "Demonstrates effect of transfer learning.",
-                "Details": "Word2Vec (200d) embedding, 1D CNN, Max Pooling, BiLSTM, Self-Attention, trained using stepwise transfer learning. Proves transfer learning effectiveness even on domain embeddings."
-            },
-            {
-                "ID": "Model D",
-                "Name": "GloVe + W2V + Emoji2Vec Fusion + Multi-scale CNN + MaxPool + BiLSTM + Self-Attention + Stepwise TL",
-                "Accuracy": 0.8450,
-                "Precision": 0.7900,
-                "Recall": 0.8350,
-                "Specificity": 0.8520,
-                "F1": 0.8150,
-                "ROC-AUC": 0.9300,
-                "MCC": 0.6700,
-                "Overfit": 0.0400,
-                "Description": "Final proposed architecture. Combines semantic, domain-specific, and emoji features.",
-                "Details": "Triple embedding fusion layer (GloVe + Word2Vec + Emoji2Vec 600d), Multi-Scale parallel CNN filters (kernels 2,3,4), Max Pooling, BiLSTM sequence model, Self-Attention layer, and 3-phase stepwise transfer learning."
-            }
-        ]
     
-        # Render Modern Ablation Table
-        def get_stat_details(stat_name: str) -> tuple:
-            name = stat_name.lower()
-            if "tetrachoric" in name:
-                return "Moderate positive association", "Moderate"
-            elif "chi-square" in name or "χ²" in name or "pearson" in name:
-                return "Significant dependency between variables", "Strong"
-            elif "p-value" in name:
-                return "Highly significant (p < 0.05)", "Strong"
-            elif "mcc" in name or "φ" in name or "phi" in name:
-                return "Moderate predictive relationship", "Moderate"
-            elif "cramér" in name or "cramer" in name:
-                return "Small-to-moderate effect size", "Weak"
-            return "N/A", "Unknown"
-    
-        BADGE_HTML = {
-            "Weak": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(255, 152, 0, 0.12); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.25);">Weak</span>',
-            "Moderate": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(3, 169, 244, 0.12); color: #03a9f4; border: 1px solid rgba(3, 169, 244, 0.25);">Moderate</span>',
-            "Strong": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(76, 175, 80, 0.12); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.25);">Strong</span>',
+    st.divider()
+    st.markdown("### 🔬 Deep-Dive into Model Components")
+    st.markdown("""
+    The neural network utilizes the following key components as described in the research:
+
+    1. **Triple Embedding Fusion (600-dim)**:
+    * **GloVe-Twitter (200d)**: Encodes global word-to-word co-occurrence statistics trained on 2B tweets.
+    * **Word2Vec (200d)**: Captures local syntactic and semantic contexts.
+    * **Emoji2Vec (200d)**: Maps emoji characters into the same vector space as words, allowing emojis to be computed mathematically alongside text.
+    2. **Multi-Scale CNN**: Captures local n-gram patterns. It runs parallel 1D convolutions with kernel sizes 2 (bigrams), 3 (trigrams), and 4 (4-grams) to capture lexical sequences regardless of position.
+    3. **Bidirectional LSTM (BiLSTM)**: Evaluates temporal sequence dependencies from left-to-right and right-to-left. This allows the model to detect shifts in tone (e.g., positive start followed by a negative emoji or phrase at the end).
+    4. **Multi-Head Self-Attention**: Synthesizes the final feature representation by calculating self-attention weights across the text, allowing the model to focus on crucial words or emojis that trigger sarcasm (e.g., contrasting the word "best" with the emoji `🙄`).
+    """)
+
+with tab_comparison:
+    st.markdown("### 📈 Model Comparison (Ablation Study)")
+    st.markdown("#### 📈 Model Comparison (Ablation Study)")
+
+    # ── Ablation Study Dataset ──
+    models_data = [
+        {
+            "ID": "Model A",
+            "Name": "Word2Vec + CNN + MaxPool + BiLSTM + Attention",
+            "Accuracy": 0.7729,
+            "Precision": 0.7100,
+            "Recall": 0.7200,
+            "Specificity": 0.8000,
+            "F1": 0.7150,
+            "ROC-AUC": 0.8748,
+            "MCC": 0.5383,
+            "Overfit": 0.1600,
+            "Description": "Weak baseline. Shows severe overfitting. Used only as research baseline.",
+            "Details": "Word2Vec (200d) embedding, 1D CNN feature extractors, 1D Max Pooling, BiLSTM temporal modeling, Multi-Head Attention layer. Trained from scratch without transfer learning."
+        },
+        {
+            "ID": "Model B",
+            "Name": "GloVe-Twitter + CNN + MaxPool + BiLSTM + Attention + Stepwise TL",
+            "Accuracy": 0.8275,
+            "Precision": 0.7600,
+            "Recall": 0.8100,
+            "Specificity": 0.8400,
+            "F1": 0.7840,
+            "ROC-AUC": 0.9159,
+            "MCC": 0.6476,
+            "Overfit": 0.0500,
+            "Description": "Current best model. Strong generalization. Publishable architecture.",
+            "Details": "GloVe Twitter (200d) embedding, 1D CNN, Max Pooling, BiLSTM, Self-Attention, trained using a 3-phase stepwise transfer learning approach."
+        },
+        {
+            "ID": "Model C",
+            "Name": "Word2Vec + CNN + MaxPool + BiLSTM + Attention + Stepwise TL",
+            "Accuracy": 0.8100,
+            "Precision": 0.7500,
+            "Recall": 0.7900,
+            "Specificity": 0.8200,
+            "F1": 0.7690,
+            "ROC-AUC": 0.9050,
+            "MCC": 0.6100,
+            "Overfit": 0.0800,
+            "Description": "Demonstrates effect of transfer learning.",
+            "Details": "Word2Vec (200d) embedding, 1D CNN, Max Pooling, BiLSTM, Self-Attention, trained using stepwise transfer learning. Proves transfer learning effectiveness even on domain embeddings."
+        },
+        {
+            "ID": "Model D",
+            "Name": "GloVe + W2V + Emoji2Vec Fusion + Multi-scale CNN + MaxPool + BiLSTM + Self-Attention + Stepwise TL",
+            "Accuracy": 0.8450,
+            "Precision": 0.7900,
+            "Recall": 0.8350,
+            "Specificity": 0.8520,
+            "F1": 0.8150,
+            "ROC-AUC": 0.9300,
+            "MCC": 0.6700,
+            "Overfit": 0.0400,
+            "Description": "Final proposed architecture. Combines semantic, domain-specific, and emoji features.",
+            "Details": "Triple embedding fusion layer (GloVe + Word2Vec + Emoji2Vec 600d), Multi-Scale parallel CNN filters (kernels 2,3,4), Max Pooling, BiLSTM sequence model, Self-Attention layer, and 3-phase stepwise transfer learning."
         }
-    
-        ablation_html = """
-        <div style="overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); background-color: #0d1117; font-family: 'Inter', sans-serif; margin-bottom: 25px;">
+    ]
+
+    # Render Modern Ablation Table
+    def get_stat_details(stat_name: str) -> tuple:
+        name = stat_name.lower()
+        if "tetrachoric" in name:
+            return "Moderate positive association", "Moderate"
+        elif "chi-square" in name or "χ²" in name or "pearson" in name:
+            return "Significant dependency between variables", "Strong"
+        elif "p-value" in name:
+            return "Highly significant (p < 0.05)", "Strong"
+        elif "mcc" in name or "φ" in name or "phi" in name:
+            return "Moderate predictive relationship", "Moderate"
+        elif "cramér" in name or "cramer" in name:
+            return "Small-to-moderate effect size", "Weak"
+        return "N/A", "Unknown"
+
+    BADGE_HTML = {
+        "Weak": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(255, 152, 0, 0.12); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.25);">Weak</span>',
+        "Moderate": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(3, 169, 244, 0.12); color: #03a9f4; border: 1px solid rgba(3, 169, 244, 0.25);">Moderate</span>',
+        "Strong": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(76, 175, 80, 0.12); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.25);">Strong</span>',
+    }
+
+    ablation_html = """
+    <div style="overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); background-color: #0d1117; font-family: 'Inter', sans-serif; margin-bottom: 25px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #e2e8f0;">
+            <thead>
+                <tr style="background-color: #161b22; border-bottom: 2px solid rgba(255, 255, 255, 0.15);">
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Model</th>
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Accuracy</th>
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">F1 Score</th>
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">ROC-AUC</th>
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">MCC</th>
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Overfit Gap</th>
+                    <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Description & Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    for m in models_data:
+        is_best = (m["ID"] == "Model D")
+        row_style = "background-color: rgba(76, 175, 80, 0.04); border-left: 4px solid #4caf50;" if is_best else "border-left: 4px solid transparent;"
+        cell_weight = "font-weight: 700; color: #4caf50;" if is_best else ""
+
+        # Color coding for Overfitting Gap
+        gap = m["Overfit"]
+        if gap >= 0.15:
+            gap_badge = f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background-color: rgba(244, 67, 54, 0.12); color: #f44336; border: 1px solid rgba(244, 67, 54, 0.25); font-weight: 600;">{gap:.0%} (Severe)</span>'
+        elif gap >= 0.08:
+            gap_badge = f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background-color: rgba(255, 152, 0, 0.12); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.25); font-weight: 600;">{gap:.0%} (Moderate)</span>'
+        else:
+            gap_badge = f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background-color: rgba(76, 175, 80, 0.12); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.25); font-weight: 600;">{gap:.0%} (Low)</span>'
+
+        badge_style = "background-color: rgba(76, 175, 80, 0.15); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.3);" if is_best else "background-color: rgba(255, 255, 255, 0.05); color: #b4c6ef; border: 1px solid rgba(255, 255, 255, 0.1);"
+        desc_style = "color: #ffffff; font-weight: 600;" if is_best else "color: #a0aec0;"
+
+        name_cell = f"""
+        <td style="padding: 12px 14px; font-weight: 600;" title="{m['Details']}">
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; {badge_style} font-weight: 700;">{m['ID']}</span>
+            <span style="font-size: 0.85rem; color: #ffffff; display: block; margin-top: 4px; font-weight: 500;">{m['Name']}</span>
+        </td>
+        """
+
+        ablation_html += f"""
+        <tr style="{row_style} border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            {name_cell}
+            <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['Accuracy']:.1%}</td>
+            <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['F1']:.1%}</td>
+            <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['ROC-AUC']:.3f}</td>
+            <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['MCC']:.3f}</td>
+            <td style="padding: 12px 14px; font-family: monospace; font-size: 0.95rem; text-align: center;">{gap_badge}</td>
+            <td style="padding: 12px 14px; font-size: 0.82rem; {desc_style}">
+                {m['Description']}
+                { ' <span style="color: #ffb300; font-weight: bold;">⭐ Proposed</span>' if is_best else ''}
+            </td>
+        </tr>
+        """
+    ablation_html += """
+            </tbody>
+        </table>
+    </div>
+    """
+
+    clean_ablation = "\n".join([line.strip() for line in ablation_html.split("\n") if line.strip()])
+    st.markdown(clean_ablation, unsafe_allow_html=True)
+
+    # ── Interactive Metrics Comparison Dashboard ──
+    st.markdown("#### 🎛️ Interactive Metrics Comparison Dashboard")
+    selected_option = st.radio(
+        "Select Model to Inspect:",
+        options=["Model A", "Model B", "Model C", "Model D", "📊 Compare All"],
+        horizontal=True
+    )
+
+    if selected_option != "📊 Compare All":
+        # Render single model inspection
+        m_info = next(m for m in models_data if m["ID"] == selected_option)
+        st.markdown(f"""
+        <div style="padding: 16px; border-radius: 8px; background-color: #121824; border-left: 4px solid #1565C0; margin-bottom: 20px; font-family: 'Inter', sans-serif;">
+            <h4 style="margin: 0 0 5px 0; color: #ffffff; font-size: 1.1rem; font-weight: 600;">{m_info['ID']} — {m_info['Name']}</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: #b4c6ef;"><b>Description:</b> {m_info['Description']}</p>
+            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #8fa8ff;"><b>Architecture Details:</b> {m_info['Details']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        single_metrics = {
+            "Accuracy": m_info["Accuracy"],
+            "Precision": m_info["Precision"],
+            "Recall": m_info["Recall"],
+            "Specificity": m_info["Specificity"],
+            "F1 Score": m_info["F1"],
+            "ROC-AUC": m_info["ROC-AUC"],
+            "MCC": m_info["MCC"],
+            "Overfit Gap": m_info["Overfit"]
+        }
+        metric_names = list(single_metrics.keys())
+        metric_values = list(single_metrics.values())
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            y=metric_names,
+            x=metric_values,
+            orientation='h',
+            text=[f"{v:.4f}" if k == "MCC" else (f"{v:.1%}" if k != "ROC-AUC" else f"{v:.3f}") for k, v in single_metrics.items()],
+            textposition='auto',
+            marker_color=[COLORS["sarcastic"] if k == "Overfit Gap" else (COLORS["confidence_hi"] if k == "Accuracy" or k == "F1 Score" else COLORS["positive"]) for k in metric_names],
+            hoverinfo="x+y"
+        ))
+        fig.update_layout(
+            xaxis=dict(range=[0, 1.05], title="Score"),
+            yaxis=dict(autorange="reversed"),
+            height=320,
+            plot_bgcolor="#0d1117",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#ffffff"),
+            margin=dict(l=120, r=40, t=10, b=40)
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        # Render Grouped Bar Chart
+        plot_data = []
+        for m in models_data:
+            for metric_name, key in [
+                ("Accuracy", "Accuracy"),
+                ("Precision", "Precision"),
+                ("Recall", "Recall"),
+                ("Specificity", "Specificity"),
+                ("F1 Score", "F1"),
+                ("ROC-AUC", "ROC-AUC"),
+                ("MCC", "MCC")
+            ]:
+                plot_data.append({
+                    "Model": m["ID"],
+                    "Metric": metric_name,
+                    "Value": m[key]
+                })
+        df_plot = pd.DataFrame(plot_data)
+
+        fig = px.bar(
+            df_plot,
+            x="Metric",
+            y="Value",
+            color="Model",
+            barmode="group",
+            title="Model Metrics Comparison Table",
+            color_discrete_sequence=[
+                COLORS["sarcastic"],     # Model A
+                "#6A1B9A",              # Model B
+                COLORS["neutral"],      # Model C
+                "#4CAF50"               # Model D (Green, representing the proposed model)
+            ],
+            hover_data={"Value": ":.4f"}
+        )
+        fig.update_layout(
+            height=420,
+            plot_bgcolor="#0d1117",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#ffffff"),
+            legend=dict(orientation="h", y=1.1, x=0),
+            margin=dict(l=40, r=40, t=60, b=40)
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Rank models
+        sorted_models = sorted(models_data, key=lambda x: (-x["Accuracy"], -x["F1"], -x["MCC"]))
+        rank_rows = ""
+        for rank, m in enumerate(sorted_models, 1):
+            is_best = (rank == 1)
+            row_style = "background-color: rgba(76, 175, 80, 0.08); font-weight: bold; border-left: 4px solid #4caf50;" if is_best else "border-left: 4px solid transparent;"
+            rank_badge = "🏆 Rank 1 (Best)" if is_best else f"Rank {rank}"
+
+            rank_rows += f"""
+            <tr style="{row_style} border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <td style="padding: 12px 16px; color: #ffffff;">{rank_badge}</td>
+                <td style="padding: 12px 16px; font-weight: 600; color: #ffffff;">{m['ID']}</td>
+                <td style="padding: 12px 16px; color: #b4c6ef;">{m['Name']}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['Accuracy']:.1%}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['F1']:.1%}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['ROC-AUC']:.3f}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['MCC']:.3f}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['Overfit']:.1%}</td>
+            </tr>
+            """
+
+        ranking_table_html = f"""
+        <h5 style="margin-top: 15px; margin-bottom: 10px;">📋 Model Ranking Table</h5>
+        <div style="overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); background-color: #0d1117; font-family: 'Inter', sans-serif; margin-bottom: 20px;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; color: #e2e8f0;">
                 <thead>
                     <tr style="background-color: #161b22; border-bottom: 2px solid rgba(255, 255, 255, 0.15);">
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Model</th>
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Accuracy</th>
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">F1 Score</th>
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">ROC-AUC</th>
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">MCC</th>
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Overfit Gap</th>
-                        <th style="padding: 12px 14px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Description & Status</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Rank</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Model ID</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Architecture</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Accuracy</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">F1 Score</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">ROC-AUC</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">MCC</th>
+                        <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Overfit Gap</th>
                     </tr>
                 </thead>
                 <tbody>
-        """
-        for m in models_data:
-            is_best = (m["ID"] == "Model D")
-            row_style = "background-color: rgba(76, 175, 80, 0.04); border-left: 4px solid #4caf50;" if is_best else "border-left: 4px solid transparent;"
-            cell_weight = "font-weight: 700; color: #4caf50;" if is_best else ""
-            
-            # Color coding for Overfitting Gap
-            gap = m["Overfit"]
-            if gap >= 0.15:
-                gap_badge = f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background-color: rgba(244, 67, 54, 0.12); color: #f44336; border: 1px solid rgba(244, 67, 54, 0.25); font-weight: 600;">{gap:.0%} (Severe)</span>'
-            elif gap >= 0.08:
-                gap_badge = f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background-color: rgba(255, 152, 0, 0.12); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.25); font-weight: 600;">{gap:.0%} (Moderate)</span>'
-            else:
-                gap_badge = f'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background-color: rgba(76, 175, 80, 0.12); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.25); font-weight: 600;">{gap:.0%} (Low)</span>'
-                
-            badge_style = "background-color: rgba(76, 175, 80, 0.15); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.3);" if is_best else "background-color: rgba(255, 255, 255, 0.05); color: #b4c6ef; border: 1px solid rgba(255, 255, 255, 0.1);"
-            desc_style = "color: #ffffff; font-weight: 600;" if is_best else "color: #a0aec0;"
-            
-            name_cell = f"""
-            <td style="padding: 12px 14px; font-weight: 600;" title="{m['Details']}">
-                <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; {badge_style} font-weight: 700;">{m['ID']}</span>
-                <span style="font-size: 0.85rem; color: #ffffff; display: block; margin-top: 4px; font-weight: 500;">{m['Name']}</span>
-            </td>
-            """
-            
-            ablation_html += f"""
-            <tr style="{row_style} border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-                {name_cell}
-                <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['Accuracy']:.1%}</td>
-                <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['F1']:.1%}</td>
-                <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['ROC-AUC']:.3f}</td>
-                <td style="padding: 12px 14px; {cell_weight} font-family: monospace; font-size: 0.95rem; text-align: center;">{m['MCC']:.3f}</td>
-                <td style="padding: 12px 14px; font-family: monospace; font-size: 0.95rem; text-align: center;">{gap_badge}</td>
-                <td style="padding: 12px 14px; font-size: 0.82rem; {desc_style}">
-                    {m['Description']}
-                    { ' <span style="color: #ffb300; font-weight: bold;">⭐ Proposed</span>' if is_best else ''}
-                </td>
-            </tr>
-            """
-        ablation_html += """
+                    {rank_rows}
                 </tbody>
             </table>
         </div>
+
+        <div style="padding: 18px; border-radius: 8px; background-color: #1b281f; border-left: 4px solid #4caf50; font-family: 'Inter', sans-serif; margin-bottom: 20px;">
+            <h5 style="margin: 0 0 8px 0; color: #4caf50; font-size: 1rem; font-weight: 600;">
+                🏆 Performance Summary & Breakthrough
+            </h5>
+            <p style="margin: 0; font-size: 0.9rem; color: #c8e6c9; line-height: 1.5;">
+                <b>Model D ("GloVe + Word2Vec + Emoji2Vec Fusion")</b> achieves the best overall performance across all evaluated metrics. It improves the Matthews Correlation Coefficient (MCC) by <b>~24%</b> (0.670 vs. 0.538) over the scratch Model A baseline, while successfully reducing the overfitting gap from <b>16% down to just 4%</b> due to stepwise transfer learning and emoji-aware regularization.
+            </p>
+        </div>
         """
-        
-        clean_ablation = "\n".join([line.strip() for line in ablation_html.split("\n") if line.strip()])
-        st.markdown(clean_ablation, unsafe_allow_html=True)
-        
-        # ── Interactive Metrics Comparison Dashboard ──
-        st.markdown("#### 🎛️ Interactive Metrics Comparison Dashboard")
-        selected_option = st.radio(
-            "Select Model to Inspect:",
-            options=["Model A", "Model B", "Model C", "Model D", "📊 Compare All"],
-            horizontal=True
-        )
-        
-        if selected_option != "📊 Compare All":
-            # Render single model inspection
-            m_info = next(m for m in models_data if m["ID"] == selected_option)
-            st.markdown(f"""
-            <div style="padding: 16px; border-radius: 8px; background-color: #121824; border-left: 4px solid #1565C0; margin-bottom: 20px; font-family: 'Inter', sans-serif;">
-                <h4 style="margin: 0 0 5px 0; color: #ffffff; font-size: 1.1rem; font-weight: 600;">{m_info['ID']} — {m_info['Name']}</h4>
-                <p style="margin: 0; font-size: 0.9rem; color: #b4c6ef;"><b>Description:</b> {m_info['Description']}</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #8fa8ff;"><b>Architecture Details:</b> {m_info['Details']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-            single_metrics = {
-                "Accuracy": m_info["Accuracy"],
-                "Precision": m_info["Precision"],
-                "Recall": m_info["Recall"],
-                "Specificity": m_info["Specificity"],
-                "F1 Score": m_info["F1"],
-                "ROC-AUC": m_info["ROC-AUC"],
-                "MCC": m_info["MCC"],
-                "Overfit Gap": m_info["Overfit"]
-            }
-            metric_names = list(single_metrics.keys())
-            metric_values = list(single_metrics.values())
-    
-            fig = go.Figure()
-            fig.add_trace(go.Bar(
-                y=metric_names,
-                x=metric_values,
-                orientation='h',
-                text=[f"{v:.4f}" if k == "MCC" else (f"{v:.1%}" if k != "ROC-AUC" else f"{v:.3f}") for k, v in single_metrics.items()],
-                textposition='auto',
-                marker_color=[COLORS["sarcastic"] if k == "Overfit Gap" else (COLORS["confidence_hi"] if k == "Accuracy" or k == "F1 Score" else COLORS["positive"]) for k in metric_names],
-                hoverinfo="x+y"
-            ))
-            fig.update_layout(
-                xaxis=dict(range=[0, 1.05], title="Score"),
-                yaxis=dict(autorange="reversed"),
-                height=320,
-                plot_bgcolor="#0d1117",
-                paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#ffffff"),
-                margin=dict(l=120, r=40, t=10, b=40)
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            # Render Grouped Bar Chart
-            plot_data = []
-            for m in models_data:
-                for metric_name, key in [
-                    ("Accuracy", "Accuracy"),
-                    ("Precision", "Precision"),
-                    ("Recall", "Recall"),
-                    ("Specificity", "Specificity"),
-                    ("F1 Score", "F1"),
-                    ("ROC-AUC", "ROC-AUC"),
-                    ("MCC", "MCC")
-                ]:
-                    plot_data.append({
-                        "Model": m["ID"],
-                        "Metric": metric_name,
-                        "Value": m[key]
-                    })
-            df_plot = pd.DataFrame(plot_data)
-    
-            fig = px.bar(
-                df_plot,
-                x="Metric",
-                y="Value",
-                color="Model",
-                barmode="group",
-                title="Model Metrics Comparison Table",
-                color_discrete_sequence=[
-                    COLORS["sarcastic"],     # Model A
-                    "#6A1B9A",              # Model B
-                    COLORS["neutral"],      # Model C
-                    "#4CAF50"               # Model D (Green, representing the proposed model)
-                ],
-                hover_data={"Value": ":.4f"}
-            )
-            fig.update_layout(
-                height=420,
-                plot_bgcolor="#0d1117",
-                paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#ffffff"),
-                legend=dict(orientation="h", y=1.1, x=0),
-                margin=dict(l=40, r=40, t=60, b=40)
-            )
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Rank models
-            sorted_models = sorted(models_data, key=lambda x: (-x["Accuracy"], -x["F1"], -x["MCC"]))
-            rank_rows = ""
-            for rank, m in enumerate(sorted_models, 1):
-                is_best = (rank == 1)
-                row_style = "background-color: rgba(76, 175, 80, 0.08); font-weight: bold; border-left: 4px solid #4caf50;" if is_best else "border-left: 4px solid transparent;"
-                rank_badge = "🏆 Rank 1 (Best)" if is_best else f"Rank {rank}"
-                
-                rank_rows += f"""
-                <tr style="{row_style} border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-                    <td style="padding: 12px 16px; color: #ffffff;">{rank_badge}</td>
-                    <td style="padding: 12px 16px; font-weight: 600; color: #ffffff;">{m['ID']}</td>
-                    <td style="padding: 12px 16px; color: #b4c6ef;">{m['Name']}</td>
-                    <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['Accuracy']:.1%}</td>
-                    <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['F1']:.1%}</td>
-                    <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['ROC-AUC']:.3f}</td>
-                    <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['MCC']:.3f}</td>
-                    <td style="padding: 12px 16px; text-align: center; font-family: monospace;">{m['Overfit']:.1%}</td>
-                </tr>
-                """
-                
-            ranking_table_html = f"""
-            <h5 style="margin-top: 15px; margin-bottom: 10px;">📋 Model Ranking Table</h5>
-            <div style="overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); background-color: #0d1117; font-family: 'Inter', sans-serif; margin-bottom: 20px;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; color: #e2e8f0;">
-                    <thead>
-                        <tr style="background-color: #161b22; border-bottom: 2px solid rgba(255, 255, 255, 0.15);">
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Rank</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Model ID</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff;">Architecture</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Accuracy</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">F1 Score</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">ROC-AUC</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">MCC</th>
-                            <th style="padding: 12px 16px; font-weight: 600; font-size: 0.88rem; color: #8fa8ff; text-align: center;">Overfit Gap</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rank_rows}
-                    </tbody>
-                </table>
-            </div>
-            
-            <div style="padding: 18px; border-radius: 8px; background-color: #1b281f; border-left: 4px solid #4caf50; font-family: 'Inter', sans-serif; margin-bottom: 20px;">
-                <h5 style="margin: 0 0 8px 0; color: #4caf50; font-size: 1rem; font-weight: 600;">
-                    🏆 Performance Summary & Breakthrough
-                </h5>
-                <p style="margin: 0; font-size: 0.9rem; color: #c8e6c9; line-height: 1.5;">
-                    <b>Model D ("GloVe + Word2Vec + Emoji2Vec Fusion")</b> achieves the best overall performance across all evaluated metrics. It improves the Matthews Correlation Coefficient (MCC) by <b>~24%</b> (0.670 vs. 0.538) over the scratch Model A baseline, while successfully reducing the overfitting gap from <b>16% down to just 4%</b> due to stepwise transfer learning and emoji-aware regularization.
-                </p>
-            </div>
-            """
-            clean_ranking = "\n".join([line.strip() for line in ranking_table_html.split("\n") if line.strip()])
-            st.markdown(clean_ranking, unsafe_allow_html=True)
+        clean_ranking = "\n".join([line.strip() for line in ranking_table_html.split("\n") if line.strip()])
+        st.markdown(clean_ranking, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════
 # TAB 4: HISTORY
 # ════════════════════════════════════════════════════════════
+
+
 with tab_history:
     st.markdown("### 📋 Prediction History")
     st.caption("Predictions from this session (max 50 entries)")
