@@ -193,7 +193,7 @@ def get_history_df():
 # PAGE CONFIG
 # ══════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title = "Sarcoji — Sarcasm Detection",
+    page_title = "😏 Sarcoji-SentiFusion  App",
     page_icon  = "😏",
     layout     = "wide",
     initial_sidebar_state = "collapsed",
@@ -366,7 +366,7 @@ registry = load_model()
 # ══════════════════════════════════════════════════════════════
 st.markdown("""
 <div class="main-header">
-    <h1>😏 Sarcoji — Sarcasm Detection</h1>
+    <h1>😏 Sarcoji-SentiFusion  App</h1>
     <p>
         Hybrid Deep Learning &nbsp;|&nbsp;
         GloVe + Word2Vec + Emoji2Vec &nbsp;|&nbsp;

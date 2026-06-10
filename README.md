@@ -1,5 +1,5 @@
 ---
-title: Sarcoji — Sarcasm Detection
+title: 😏 Sarcoji-SentiFusion  App
 emoji: 😏
 colorFrom: blue
 colorTo: purple

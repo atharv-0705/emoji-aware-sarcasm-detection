@@ -16,7 +16,7 @@ from utils import (
 # PAGE CONFIG
 # ══════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title = "Sarcoji — Sarcasm Detection",
+    page_title = "😏 Sarcoji-SentiFusion  App",
     page_icon  = "😏",
     layout     = "wide",
     initial_sidebar_state = "collapsed",
@@ -182,7 +182,7 @@ def render_highlight_tokens(highlights):
 # ══════════════════════════════════════════════════════════════
 st.markdown("""
 <div class="main-header">
-    <h1>😏 Sarcoji — Sarcasm Detection</h1>
+    <h1>😏 Sarcoji-SentiFusion  App</h1>
     <p>
         Hybrid Deep Learning &nbsp;|&nbsp;
         GloVe + Word2Vec + Emoji2Vec &nbsp;|&nbsp;
