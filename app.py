@@ -729,8 +729,9 @@ with tab_model:
 
     with col_arch:
         st.markdown("#### Architecture: CNN-BiLSTM-Attention")
-        st.markdown("""
-        ```mermaid
+        import streamlit.components.v1 as components
+        
+        mermaid_code = """
         graph TD
             A[Input Text + Emojis] --> B[Text Preprocessing & Emoji Demojization]
             B --> C[Triple Embedding Fusion Layer]
@@ -752,8 +753,41 @@ with tab_model:
             J --> K{Youden's J Thresholding}
             K -->|p >= 0.449| L[Sarcastic]
             K -->|p < 0.449| M[Non-Sarcastic]
-        ```
-        """)
+        """
+        
+        html_code = f"""
+        <div class="mermaid" style="background-color: transparent;">
+        {mermaid_code}
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+        <script>
+            mermaid.initialize({{
+                startOnLoad: true,
+                theme: 'dark',
+                themeVariables: {{
+                    background: 'transparent',
+                    primaryColor: '#1e293b',
+                    primaryTextColor: '#f8fafc',
+                    primaryBorderColor: '#475569',
+                    lineColor: '#94a3b8',
+                    secondaryColor: '#334155',
+                    tertiaryColor: '#0f172a'
+                }}
+            }});
+        </script>
+        <style>
+            body {{
+                background-color: transparent !important;
+                margin: 0;
+                padding: 0;
+            }}
+            /* Hide scrollbar */
+            ::-webkit-scrollbar {{
+                display: none;
+            }}
+        </style>
+        """
+        components.html(html_code, height=950, scrolling=False)
 
     with col_perf:
         st.markdown("#### Training: Stepwise Transfer Learning")
