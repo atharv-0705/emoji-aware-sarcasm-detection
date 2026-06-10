@@ -526,7 +526,9 @@ with tab_analytics:
                 </p>
             </div>
             """
-            st.markdown(table_html, unsafe_allow_html=True)
+            # Clean leading/trailing whitespace to prevent markdown code block parsing
+            clean_html = "\n".join([line.strip() for line in table_html.split("\n") if line.strip()])
+            st.markdown(clean_html, unsafe_allow_html=True)
         else:
             st.info("Correlation data not available. Check backend/data/correlation_summary.csv")
  
