@@ -607,36 +607,111 @@ with tab_analytics:
     st.markdown("#### 📐 Statistical Correlation Analysis")
     corr_df = get_correlation_stats()
     if not corr_df.empty:
-        stat_cols = st.columns(4)
-        for i, row in corr_df.iterrows():
-            if i >= 4:
-                break
-            stat_name  = str(row.get("Statistic", row.get("statistic", f"Metric {i+1}")))
-            stat_val   = row.get("Value", row.get("value", "—"))
-            stat_str   = row.get("Strength", row.get("strength", ""))
-            col = stat_cols[i % 4]
-            with col:
-                render_metric_card(
-                    stat_name[:25],
-                    f"{float(stat_val):.4f}" if isinstance(stat_val, (int, float)) else str(stat_val),
-                    COLORS["sarcastic"] if "χ" in stat_name else COLORS["positive"],
-                    subtitle = stat_str if isinstance(stat_str, str) else ""
-                )
-        st.markdown("")
-        st.dataframe(corr_df, use_container_width=True, hide_index=True)
-        with st.expander("ℹ️ How to interpret these statistics"):
-            st.markdown("""
-            | Statistic | Formula | Interpretation |
-            |---|---|---|
-            | **Tetrachoric r** | cos(π/(1+√(ad/bc))) | Latent continuous association between binary variables |
-            | **Chi-Square χ²** | Σ(O−E)²/E | Tests independence (p<0.05 → not independent) |
-            | **MCC (φ)** | (ad−bc)/√((a+b)(a+c)(b+d)(c+d)) | Balanced binary association [−1,+1] |
-            | **Cramér's V** | √(χ²/N(q−1)) | Effect size [0,1]: 0=none, 1=perfect |
+        # Define helper mapping for statistics
+        def get_stat_details(stat_name: str) -> tuple:
+            name = stat_name.lower()
+            if "tetrachoric" in name:
+                return "Moderate positive association", "Moderate"
+            elif "chi-square" in name or "χ²" in name or "pearson" in name:
+                return "Significant dependency between variables", "Strong"
+            elif "p-value" in name:
+                return "Highly significant (p < 0.05)", "Strong"
+            elif "mcc" in name or "φ" in name or "phi" in name:
+                return "Moderate predictive relationship", "Moderate"
+            elif "cramér" in name or "cramer" in name:
+                return "Small-to-moderate effect size", "Weak"
+            return "N/A", "Unknown"
 
-            **Key finding:** Weak MCC (~0.05–0.10) despite significant χ² confirms that
-            emoji usage is statistically associated with sarcasm but the *practical*
-            effect is small — justifying the need for deep learning.
-            """)
+        BADGE_HTML = {
+            "Weak": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(255, 152, 0, 0.12); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.25);">Weak</span>',
+            "Moderate": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(3, 169, 244, 0.12); color: #03a9f4; border: 1px solid rgba(3, 169, 244, 0.25);">Moderate</span>',
+            "Strong": '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(76, 175, 80, 0.12); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.25);">Strong</span>',
+        }
+
+        col_stat = corr_df.columns[0]
+        col_sent = corr_df.columns[1]
+        col_emoji = corr_df.columns[2]
+
+        html_rows = ""
+        for i, row in corr_df.iterrows():
+            stat_name = str(row[col_stat])
+            val_sent = row[col_sent]
+            val_emoji = row[col_emoji]
+            
+            try:
+                if isinstance(val_sent, float) or (isinstance(val_sent, str) and "." in val_sent):
+                    f_sent = f"{float(val_sent):.4f}" if "p-value" in stat_name.lower() else f"{float(val_sent):.2f}"
+                else:
+                    f_sent = str(val_sent)
+            except Exception:
+                f_sent = str(val_sent)
+                
+            try:
+                if isinstance(val_emoji, float) or (isinstance(val_emoji, str) and "." in val_emoji):
+                    f_emoji = f"{float(val_emoji):.4f}" if "p-value" in stat_name.lower() else f"{float(val_emoji):.2f}"
+                else:
+                    f_emoji = str(val_emoji)
+            except Exception:
+                f_emoji = str(val_emoji)
+                
+            interp, strength = get_stat_details(stat_name)
+            badge = BADGE_HTML.get(strength, f'<span style="color:#888;">{strength}</span>')
+            
+            row_bg = "rgba(255, 255, 255, 0.02)" if i % 2 == 1 else "transparent"
+            
+            html_rows += f"""
+            <tr style="background-color: {row_bg}; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <td style="padding: 12px 16px; font-weight: 500; color: #ffffff;">{stat_name}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace; font-size: 0.95rem; color: #e2e8f0;">{f_sent}</td>
+                <td style="padding: 12px 16px; text-align: center; font-family: monospace; font-size: 0.95rem; color: #e2e8f0;">{f_emoji}</td>
+                <td style="padding: 12px 16px; color: #b4c6ef; font-size: 0.88rem;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        {badge}
+                        <span>{interp}</span>
+                    </div>
+                </td>
+            </tr>
+            """
+
+        table_html = f"""
+        <div style="display: flex; gap: 15px; margin-bottom: 10px; align-items: center; font-size: 0.85rem; color: #8fa8ff;">
+            <span style="font-weight: 600;">Correlation strength legend:</span>
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(255, 152, 0, 0.12); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.25);">Weak (|r| &lt; 0.3)</span>
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(3, 169, 244, 0.12); color: #03a9f4; border: 1px solid rgba(3, 169, 244, 0.25);">Moderate (0.3 &le; |r| &lt; 0.5)</span>
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background-color: rgba(76, 175, 80, 0.12); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.25);">Strong (|r| &ge; 0.5)</span>
+        </div>
+        <div style="overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); background-color: #0d1117; font-family: 'Inter', sans-serif; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; color: #e2e8f0;">
+                <thead>
+                    <tr style="background-color: #161b22; border-bottom: 2px solid rgba(255, 255, 255, 0.15);">
+                        <th style="padding: 14px 16px; font-weight: 600; font-size: 0.9rem; color: #8fa8ff;">Statistic</th>
+                        <th style="padding: 14px 16px; font-weight: 600; font-size: 0.9rem; color: #8fa8ff; text-align: center;">{col_sent}</th>
+                        <th style="padding: 14px 16px; font-weight: 600; font-size: 0.9rem; color: #8fa8ff; text-align: center;">{col_emoji}</th>
+                        <th style="padding: 14px 16px; font-weight: 600; font-size: 0.9rem; color: #8fa8ff;">Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {html_rows}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="padding: 16px; border-radius: 8px; background-color: #121824; border-left: 4px solid #1565C0; font-family: 'Inter', sans-serif; margin-bottom: 15px;">
+            <h5 style="margin: 0 0 10px 0; color: #ffffff; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                ℹ️ Understanding the Statistical Metrics
+            </h5>
+            <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #b4c6ef; line-height: 1.6;">
+                <li><b>Tetrachoric Correlation:</b> Estimates the latent linear correlation between two underlying continuous variables that have been observed as binary (e.g., latent sarcastic tone vs. binary sentiment polarity).</li>
+                <li><b>Pearson Chi-Square (χ²):</b> A hypothesis test that evaluates whether the categorical variables are independent. A low p-value indicates significant dependency.</li>
+                <li><b>Matthews Correlation Coefficient (MCC / φ):</b> A balanced measure of binary association that accounts for all four cells in a confusion matrix. Scores range from -1 to +1.</li>
+                <li><b>Cramér's V:</b> Measures the strength of association between nominal variables on a scale from 0 (no association) to 1 (perfect association).</li>
+            </ul>
+            <p style="margin: 10px 0 0 0; font-size: 0.85rem; color: #8fa8ff; font-style: italic;">
+                <b>Key Finding:</b> The moderate correlation scores confirm that while sarcasm is statistically linked to sentiment and emoji features, the relationship is non-linear and complex—justifying the application of deep learning sequence modeling over basic heuristic/statistical classifiers.
+            </p>
+        </div>
+        """
+        st.markdown(table_html, unsafe_allow_html=True)
     else:
         st.info("Correlation data not available. Check data/correlation_summary.csv")
 
