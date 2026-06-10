@@ -733,26 +733,28 @@ with tab_model:
         
         mermaid_code = """
         graph TD
-            A[Input Text + Emojis] --> B[Text Preprocessing & Emoji Demojization]
-            B --> C[Triple Embedding Fusion Layer]
+            A["Input Text + Emojis"] --> B["Text Preprocessing & Emoji Demojization"]
+            B --> C["Triple Embedding Fusion Layer"]
             
-            subgraph Triple Embedding Fusion [600-Dimensional Dense Representation]
-                C1[GloVe-Twitter 200d]
-                C2[Word2Vec 200d]
-                C3[Emoji2Vec 200d]
-                C1 & C2 & C3 --> C4[Concatenation: F = W ⊕ G ⊕ E]
+            subgraph Triple Embedding Fusion ["600-Dimensional Dense Representation"]
+                C1["GloVe-Twitter 200d"]
+                C2["Word2Vec 200d"]
+                C3["Emoji2Vec 200d"]
+                C1 --> C4["Concatenation: F = W ⊕ G ⊕ E"]
+                C2 --> C4
+                C3 --> C4
             end
             
-            C4 --> D[Spatial Dropout 1D 0.40]
-            D --> E[Multi-Scale 1D CNN Kernels: 2, 3, 4]
-            E --> F[1D Max Pooling]
-            F --> G[Bidirectional LSTM 64 + 64 units]
-            G --> H[Multi-Head Self-Attention 4 Heads]
-            H --> I[Fully Connected Classifier Dense 128 -> BN -> Dense 64]
-            I --> J[Sigmoid Output Layer]
-            J --> K{Youden's J Thresholding}
-            K -->|p >= 0.449| L[Sarcastic]
-            K -->|p < 0.449| M[Non-Sarcastic]
+            C4 --> D["Spatial Dropout 1D 0.40"]
+            D --> E["Multi-Scale 1D CNN Kernels: 2, 3, 4"]
+            E --> F["1D Max Pooling"]
+            F --> G["Bidirectional LSTM 64 + 64 units"]
+            G --> H["Multi-Head Self-Attention 4 Heads"]
+            H --> I["Fully Connected Classifier Dense 128 -> BN -> Dense 64"]
+            I --> J["Sigmoid Output Layer"]
+            J --> K{"Youden's J Thresholding"}
+            K -->|p &ge; 0.449| L["Sarcastic"]
+            K -->|p &lt; 0.449| M["Non-Sarcastic"]
         """
         
         html_code = f"""
@@ -777,9 +779,9 @@ with tab_model:
         </script>
         <style>
             body {{
-                background-color: transparent !important;
+                background-color: #0e1117 !important;
                 margin: 0;
-                padding: 0;
+                padding: 10px;
             }}
             /* Hide scrollbar */
             ::-webkit-scrollbar {{
