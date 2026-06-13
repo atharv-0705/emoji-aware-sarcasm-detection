@@ -1,0 +1,2 @@
+Model,Accuracy,Precision,Recall,Specificity,F1 (binary),F1 (macro),F1 (weighted),ROC-AUC,MCC,TP,FP,FN,TN,Test Samples,Embedding Dim,Vocab Size,Max Seq Len
+CNN-BiLSTM-Attention,0.8162,0.7617,0.7688,0.8465,0.7652,0.8071,0.8164,0.8952,0.6142,1320,413,397,2277,4407,228,27102,30

@@ -1,0 +1,6 @@
+Statistic,Sarcasm vs Sentiment,Sarcasm vs Emoji Polarity
+Tetrachoric Correlation,0.45,0.51
+Pearson χ²,12.3,10.7
+p-value,0.001,0.005
+MCC (φ),0.32,0.35
+Cramér's V,0.28,0.3
