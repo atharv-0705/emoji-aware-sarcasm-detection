@@ -279,19 +279,19 @@ Here are visual representations of the **Sarcoji-SentiFusion** analytics dashboa
 
 ### 1. Prediction Interface
 *Interactive playground containing token attention highlights and confidence metrics.*
-![Dashboard Screenshot](assets/dashboard_prediction.png)
+![Dashboard Screenshot](SnapShoot/Dashboard Screenshot.png)
 
 ### 2. Dataset Analytics
 *Distribution of the top 15 sarcastic vs. non-sarcastic emojis.*
-![Dataset Analytics](assets/dashboard_analytics.png)
+![Dataset Analytics](SnapShoot/Dataset Analytics.png)
 
 ### 3. Confusion Matrix
 *Detailed classification breakdowns on the test dataset.*
-![Confusion Matrix](assets/confusion_matrix.png)
+![Confusion Matrix](SnapShoot/Camparion of Confusion Matrix Parameters.png)
 
 ### 4. ROC Curve
 *Receiver Operating Characteristic demonstrating model discriminative power.*
-![ROC Curve](assets/roc_curve.png)
+![ROC Curve](SnapShoot/Comparion of ROC curve.png)
 
 ---
 
