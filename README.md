@@ -41,7 +41,7 @@ In modern digital communication, traditional sentiment classifiers frequently fa
 - [Model Performance](#-model-performance)
 - [Statistical Correlation Analysis](#-statistical-correlation-analysis)
 - [Screenshots](#-screenshots)
-- [Author](#-author).
+- [Author](#-author)
 - [Future Improvements](#-future-improvements)
 - [Contributing](#-contributing)
 
